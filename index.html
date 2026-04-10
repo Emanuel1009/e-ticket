@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pemesanan Tiket - Konser Harmoni 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap");
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 2.5rem;
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+      }
+
+      /* Modal & Overlay */
+      .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.9);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        padding: 20px;
+      }
+      .overlay.active {
+        display: flex;
+      }
+      .modal-content {
+        transform: scale(0.9);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .overlay.active .modal-content {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      /* Input Style - Kontras & Tinggi Konsisten */
+      .input-kontras {
+        background-color: #ffffff !important;
+        border: 2px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        height: 68px;
+        font-size: 1.125rem;
+      }
+      .input-kontras:focus {
+        border-color: #4f46e5 !important;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15) !important;
+      }
+
+      /* Ticket Design */
+      #ticketCaptureArea {
+        background: white;
+        border: 3px dashed #4f46e5;
+        position: relative;
+        overflow: hidden;
+        border-radius: 2rem;
+      }
+      .ticket-cutout {
+        position: absolute;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #7158be;
+        border: 2px solid white;
+      }
+    </style>
+  </head>
+  <body class="p-4 md:p-10 flex items-center justify-center">
+    <div id="modalKetentuan" class="overlay">
+      <div
+        class="modal-content bg-white rounded-[2.5rem] p-8 w-full max-w-lg shadow-2xl relative border-4 border-indigo-100 overflow-hidden"
+      >
+        <div
+          id="modalHeaderBg"
+          class="absolute top-0 left-0 w-full h-24 -z-10"
+        ></div>
+        <div class="text-center mb-6">
+          <h2
+            id="modalTitle"
+            class="text-2xl font-black text-slate-900 uppercase"
+          >
+            Ketentuan
+          </h2>
+          <div
+            id="modalBadge"
+            class="inline-block px-4 py-1 rounded-full text-xs font-black mt-2 shadow-sm uppercase tracking-wider"
+          ></div>
+        </div>
+        <div
+          class="max-h-[300px] overflow-y-auto mb-8 text-base leading-relaxed text-slate-700 font-medium pr-2"
+        >
+          <div id="modalLongText" class="space-y-4"></div>
+        </div>
+        <button
+          onclick="closeKetentuan()"
+          class="w-full py-5 font-black text-white bg-slate-900 rounded-2xl shadow-xl hover:bg-black uppercase text-sm tracking-widest active:scale-95 transition-all"
+        >
+          Saya Mengerti
+        </button>
+      </div>
+    </div>
+
+    <div id="modalBerhasil" class="overlay">
+      <div
+        class="bg-white rounded-[3rem] p-12 max-w-md w-full text-center shadow-2xl border-4 border-green-100"
+      >
+        <div
+          class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8"
+        >
+          <svg
+            class="w-14 h-14"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="4"
+              d="M5 13l4 4L19 7"
+            ></path>
+          </svg>
+        </div>
+        <h3
+          class="text-3xl font-extrabold text-slate-950 uppercase tracking-tight"
+        >
+          Sukses!
+        </h3>
+        <p class="text-slate-600 font-bold mt-2">Data Anda telah terkirim.</p>
+        <div
+          class="mt-10 flex items-center justify-center gap-4 bg-indigo-50 p-4 rounded-2xl border border-indigo-100"
+        >
+          <div
+            class="animate-spin w-6 h-6 border-4 border-indigo-600 border-t-transparent rounded-full"
+          ></div>
+          <span
+            class="text-xs font-black text-indigo-700 uppercase tracking-widest"
+            >Menyiapkan Tiket...</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card w-full max-w-xl p-8 md:p-14 border border-slate-100">
+      <div id="formContainer">
+        <header class="text-center mb-10">
+          <h1
+            class="text-4xl font-black text-slate-950 tracking-tighter uppercase"
+          >
+            PENTAS SENI SCB-CI 2026
+          </h1>
+          <p
+            class="text-slate-600 font-bold mt-2 uppercase text-xs tracking-widest"
+          >
+            Formulir Tiket Digital
+          </p>
+        </header>
+
+        <form id="ticketForm" class="space-y-6">
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <svg
+                class="w-6 h-6 text-indigo-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                />
+              </svg>
+              <label
+                class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]"
+                >Nama Lengkap</label
+              >
+            </div>
+            <input
+              type="text"
+              id="nama"
+              required
+              class="input-kontras w-full px-6 rounded-2xl outline-none"
+              placeholder="Masukkan Nama Lengkap"
+            />
+          </div>
+
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <svg
+                class="w-6 h-6 text-indigo-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"
+                />
+              </svg>
+              <label
+                class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]"
+                >Nomor WhatsApp</label
+              >
+            </div>
+            <input
+              type="tel"
+              id="telepon"
+              required
+              class="input-kontras w-full px-6 rounded-2xl outline-none"
+              placeholder="Contoh: 08123456789"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-3">
+                  <svg
+                    class="w-6 h-6 text-indigo-600"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M22 10V6c0-1.11-.9-2-2-2H4c-1.1 0-1.99.89-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-1.99 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.89 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z"
+                    />
+                  </svg>
+                  <label
+                    class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]"
+                    >Kategori</label
+                  >
+                </div>
+                <button
+                  type="button"
+                  onclick="showKetentuan()"
+                  class="text-[10px] font-black text-indigo-600 underline uppercase tracking-tighter"
+                >
+                  Lihat Aturan
+                </button>
+              </div>
+              <select
+                id="jenis"
+                class="input-kontras w-full px-6 rounded-2xl outline-none cursor-pointer"
+              >
+                <option value="Silver">Silver</option>
+                <option value="Gold">Gold</option>
+              </select>
+            </div>
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <svg
+                  class="w-6 h-6 text-indigo-600"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
+                <label
+                  class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]"
+                  >Jumlah Tiket</label
+                >
+              </div>
+              <input
+                type="number"
+                id="jumlah"
+                min="1"
+                max="10"
+                value="1"
+                class="input-kontras w-full px-6 rounded-2xl outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <svg
+                class="w-6 h-6 text-indigo-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"
+                />
+              </svg>
+              <label
+                class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]"
+                >Unggah Bukti Transfer</label
+              >
+            </div>
+            <div
+              class="relative group border-4 border-dashed border-slate-200 rounded-3xl p-6 text-center hover:border-indigo-500 transition-all bg-white"
+            >
+              <input
+                type="file"
+                id="buktiBayar"
+                accept="image/*"
+                required
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <div id="upload-ui">
+                <p class="text-sm font-bold text-slate-600">
+                  Tekan di sini untuk memilih foto Bukti Transfer
+                </p>
+              </div>
+              <p
+                id="file-name"
+                class="hidden text-indigo-700 font-black text-xs uppercase p-2 bg-indigo-50 rounded-lg mt-2 border border-indigo-100"
+              ></p>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            id="submitBtn"
+            class="w-full bg-slate-950 text-white font-black py-6 rounded-3xl hover:bg-black shadow-2xl active:scale-95 uppercase text-sm tracking-[0.3em] transition-all"
+          >
+            Kirim Data Pemesanan
+          </button>
+        </form>
+      </div>
+
+      <div
+        id="successMessage"
+        class="hidden space-y-10 animate-in fade-in zoom-in duration-500"
+      >
+        <div
+          id="ticketCaptureArea"
+          class="p-10 text-left space-y-8 relative border-4 border-dashed border-indigo-600"
+        >
+          <div class="ticket-cutout -left-5"></div>
+          <div class="ticket-cutout -right-5"></div>
+          <div class="flex justify-between items-center">
+            <div>
+              <p
+                class="text-[10px] font-black text-indigo-600 uppercase tracking-widest"
+              >
+                Tiket Resmi
+              </p>
+              <h3 class="text-2xl font-black text-slate-950 uppercase">
+                Konser Harmoni
+              </h3>
+            </div>
+            <div
+              id="resKategoriContainer"
+              class="px-5 py-2 rounded-xl shadow-md border border-white/20"
+            >
+              <p
+                id="resJenis"
+                class="text-xs font-black uppercase text-center"
+              ></p>
+            </div>
+          </div>
+          <div class="border-t-4 border-dashed border-slate-100 pt-8 space-y-6">
+            <div>
+              <p class="text-[10px] font-bold text-slate-500 uppercase">
+                Nama Lengkap Pemesan
+              </p>
+              <p
+                id="resNama"
+                class="font-black text-slate-950 text-2xl tracking-tight -mt-1 uppercase"
+              ></p>
+            </div>
+            <div
+              class="flex justify-between items-end p-4 bg-slate-50 rounded-xl border border-slate-100"
+            >
+              <div>
+                <p class="text-[9px] font-bold text-slate-500 uppercase">
+                  Jumlah
+                </p>
+                <p id="resJumlah" class="text-slate-950 text-lg font-black"></p>
+              </div>
+              <div
+                id="resWaktu"
+                class="text-slate-500 text-[10px] font-bold text-right"
+              ></div>
+            </div>
+            <p class="text-[9px] text-slate-300 font-mono tracking-widest pt-2">
+              ID: <span id="resId"></span>
+            </p>
+          </div>
+        </div>
+        <button
+          id="downloadBtn"
+          class="w-full bg-indigo-600 text-white font-black py-6 rounded-3xl shadow-xl hover:bg-indigo-700 uppercase text-sm tracking-widest"
+        >
+          💾 Simpan Tiket ke Galeri HP
+        </button>
+        <button
+          onclick="location.reload()"
+          class="w-full text-slate-400 text-xs font-black uppercase tracking-widest hover:text-slate-900 transition-colors text-center block"
+        >
+          ← Buat Pesanan Baru
+        </button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+      const config = {
+        apiKey: "AIzaSyByRhCV0gBXi7WrhbuwQV8QyHyF1sK6D3Y",
+        authDomain: "pemesanan-tiket-pensi2026.firebaseapp.com",
+        projectId: "pemesanan-tiket-pensi2026",
+        storageBucket: "pemesanan-tiket-pensi2026.firebasestorage.app",
+        messagingSenderId: "731740892519",
+        appId: "1:731740892519:web:b761115feb4fa392bb93c2",
+      };
+
+      const app = initializeApp(config);
+      const db = getFirestore(app);
+
+      const dataKetentuan = {
+        Gold: {
+          title: "Aturan Tiket Gold",
+          text: "<p class='font-black text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200'>Halo-halo bandung</p><p>• Barisan Depan VIP.<br>• Kaos & Tas Eksklusif.<br>• Jalur Khusus (Tanpa Antre).",
+          colorClass: "bg-amber-100 text-amber-900 border border-amber-200",
+          headerClass: "bg-amber-400",
+        },
+        Silver: {
+          title: "Aturan Tiket Silver",
+          text: "<p class='font-black text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200'>Indonesia Raya</p><p>• Barisan Tengah & Belakang.<br>• Fasilitas Standar Konser.<br>• Jalur Masuk Umum.",
+          colorClass: "bg-slate-200 text-slate-950 border border-slate-300",
+          headerClass: "bg-slate-300",
+        },
+      };
+
+      window.showKetentuan = () => {
+        const kategori = document.getElementById("jenis").value;
+        const data = dataKetentuan[kategori];
+        document.getElementById("modalTitle").innerText = data.title;
+        document.getElementById("modalLongText").innerHTML = data.text;
+        document.getElementById("modalBadge").innerText = kategori;
+        document.getElementById("modalBadge").className =
+          `inline-block px-4 py-1 rounded-full text-xs font-black mt-2 shadow-sm uppercase tracking-wider ${data.colorClass}`;
+        document.getElementById("modalHeaderBg").className =
+          `absolute top-0 left-0 w-full h-24 -z-10 ${data.headerClass}`;
+        document.getElementById("modalKetentuan").classList.add("active");
+      };
+
+      window.closeKetentuan = () =>
+        document.getElementById("modalKetentuan").classList.remove("active");
+
+      const fileInput = document.getElementById("buktiBayar");
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files[0]) {
+          document.getElementById("upload-ui").classList.add("hidden");
+          document.getElementById("file-name").innerText =
+            "✔ FOTO BERHASIL DIPILIH: " + e.target.files[0].name;
+          document.getElementById("file-name").classList.remove("hidden");
+        }
+      });
+
+      document
+        .getElementById("ticketForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("submitBtn");
+          btn.disabled = true;
+          btn.innerText = "SEDANG MENGIRIM...";
+
+          try {
+            const reader = new FileReader();
+            reader.readAsDataURL(fileInput.files[0]);
+            reader.onload = async (ev) => {
+              const now = new Date();
+              const timeStr =
+                now.toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                }) +
+                ", " +
+                now.toLocaleTimeString("id-ID", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+              const payload = {
+                nama: document.getElementById("nama").value,
+                telepon: document.getElementById("telepon").value,
+                jenis: document.getElementById("jenis").value,
+                jumlah: document.getElementById("jumlah").value,
+                bukti_bayar: ev.target.result,
+                timestamp: now.toISOString(),
+                waktu_transaksi: timeStr,
+              };
+
+              const docRef = await addDoc(collection(db, "pemesanan"), payload);
+              document.getElementById("modalBerhasil").classList.add("active");
+
+              setTimeout(() => {
+                document
+                  .getElementById("modalBerhasil")
+                  .classList.remove("active");
+                document
+                  .getElementById("formContainer")
+                  .classList.add("hidden");
+                document
+                  .getElementById("successMessage")
+                  .classList.remove("hidden");
+
+                document.getElementById("resNama").innerText = payload.nama;
+                document.getElementById("resJumlah").innerText =
+                  payload.jumlah + " Tiket";
+                document.getElementById("resWaktu").innerText = timeStr;
+                document.getElementById("resId").innerText = docRef.id;
+                document.getElementById("resJenis").innerText = payload.jenis;
+
+                const katContainer = document.getElementById(
+                  "resKategoriContainer",
+                );
+                if (payload.jenis === "Gold") {
+                  katContainer.className =
+                    "px-5 py-2 rounded-xl bg-amber-400 text-amber-950 font-black border border-amber-300";
+                } else {
+                  katContainer.className =
+                    "px-5 py-2 rounded-xl bg-slate-200 text-slate-800 font-black border border-slate-300";
+                }
+                window.currentUserName = payload.nama;
+              }, 2500);
+            };
+          } catch (err) {
+            alert("Terjadi kesalahan: " + err.message);
+            btn.disabled = false;
+            btn.innerText = "Kirim Data";
+          }
+        });
+
+      document.getElementById("downloadBtn").addEventListener("click", () => {
+        html2canvas(document.getElementById("ticketCaptureArea"), {
+          scale: 3,
+        }).then((canvas) => {
+          const link = document.createElement("a");
+          link.download = `Tiket_Harmoni_${window.currentUserName}.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+        });
+      });
+    </script>
+  </body>
+</html>
